@@ -5,11 +5,11 @@
 #include <unistd.h>
 #include <termios.h>
 
-void die(const char *s);
-void disable_raw_mode(void);
-void enable_raw_mode(void);
+static void die(const char *s);
+static void disable_raw_mode(void);
+static void enable_raw_mode(void);
 
-struct termios orig_termios;
+static struct termios orig_termios;
 
 void die(const char *s) {
     perror(s);
