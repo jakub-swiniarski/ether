@@ -16,7 +16,7 @@ void die(const char *s) {
     exit(1);
 }
 
-void disable_raw_mode() {
+void disable_raw_mode(void) {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
         die("tcsetattr");
 }
