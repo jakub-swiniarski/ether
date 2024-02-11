@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <termios.h>
 
+#include "config.h"
+
 /* function declarations */
 static void die(const char *s);
 static void disable_raw_mode(void);
@@ -54,7 +56,7 @@ int main(void) {
         else {
             printf("%d ('%c')\r\n", c, c);
         }
-        if (c == 'q') break;
+        if (c == KEY_QUIT) break;
     }
 
     return 0;
