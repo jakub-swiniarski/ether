@@ -1,3 +1,3 @@
 # ether
-a vim-like editor
+a vim-like editor <br>
 work in progress...
