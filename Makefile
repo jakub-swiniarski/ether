@@ -6,7 +6,7 @@ ether: $(OBJECTS)
 	gcc -o $@ $(OBJECTS)
 
 $(OBJECTS): $(SOURCES) $(HEADERS)
-	gcc -c $(SOURCES) -pedantic -Wall -Wextra -O2
+	gcc -c $(SOURCES) -std=c99 -pedantic -Wall -Wextra -O2
 
 .PHONY: clean run install uninstall
 
