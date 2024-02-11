@@ -1,12 +1,12 @@
-SOURCES=$(wildcard src/*.c)
-HEADERS=$(wildcard src/*.h)
-OBJECTS=$(patsubst src/%.c,%.o,$(SOURCES))
+SOURCES=$(wildcard *.c)
+HEADERS=$(wildcard *.h)
+OBJECTS=$(SOURCES:.c=.o)
 
 ether: $(OBJECTS)
 	gcc -o $@ $(OBJECTS)
 
 $(OBJECTS): $(SOURCES) $(HEADERS)
-	gcc -c $(SOURCES) -O2
+	gcc -c $(SOURCES) -pedantic -Wall -Wextra -O2
 
 .PHONY: clean run install uninstall
 
