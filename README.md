@@ -1,2 +1,3 @@
 # ether
 a vim-like editor
+work in progress...
