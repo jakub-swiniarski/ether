@@ -13,6 +13,8 @@
 
 /* structs */
 typedef struct {
+    int screen_rows;
+    int screen_cols;
     struct termios orig_termios;
 } Config;
 
@@ -22,6 +24,7 @@ static void disable_raw_mode(void);
 static void draw_rows(void);
 static void enable_raw_mode(void);
 static int get_window_size(int *rows, int *cols);
+static void init(void);
 static void process_key(void);
 static char read_key(void);
 static void refresh_screen(void);
@@ -45,7 +48,7 @@ void disable_raw_mode(void) {
 
 void draw_rows(void) {
     int y;
-    for (y=0; y<24; y++) {
+    for (y = 0; y < config.screen_rows; y++) {
         write(STDOUT_FILENO, "~\r\n", 3);
     }
 }
@@ -76,6 +79,11 @@ int get_window_size(int *rows, int *cols) {
         *rows = ws.ws_row;
         return 0;
     }
+}
+
+void init(void) {
+    if (get_window_size(&config.screen_rows, &config.screen_cols) == -1)
+        die("get_window_size");
 }
 
 void process_key(void) {
@@ -114,6 +122,7 @@ void refresh_screen(void) {
 
 int main(void) {
     enable_raw_mode();
+    init();
 
     while (1) {
         refresh_screen();
