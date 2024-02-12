@@ -63,7 +63,7 @@ char read_key(void) {
     char c;
 
     while ((n_read = read(STDIN_FILENO, &c, 1)) != 1) {
-        if(n_read == -1 & errno != EAGAIN)
+        if (n_read == -1 && errno != EAGAIN)
             die("read");
     }
 
