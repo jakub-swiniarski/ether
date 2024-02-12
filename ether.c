@@ -72,7 +72,8 @@ char read_key(void) {
 }
 
 void refresh_screen(void) {
-    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[2J", 4); /* clear the screen */
+    write(STDOUT_FILENO, "\x1b[H", 3); /* move the cursor to top-left corner */
 }
 
 int main(void) {
