@@ -149,11 +149,26 @@ void process_key(void) {
     char c = read_key();
 
     switch (c) {
+        /* quit */
         case CTRL_KEY(KEY_QUIT):
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
 
             exit(0);
+            break;
+
+        /* move the cursor */
+        case KEY_LEFT:
+            config.cur_x--;
+            break;
+        case KEY_DOWN:
+            config.cur_y++;
+            break;
+        case KEY_UP:
+            config.cur_y--;
+            break;
+        case KEY_RIGHT:
+            config.cur_x++;
             break;
     }
 }
