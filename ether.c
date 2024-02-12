@@ -14,6 +14,8 @@
 static void die(const char *s);
 static void disable_raw_mode(void);
 static void enable_raw_mode(void);
+static void process_key(void);
+static char read_key(void);
 
 /* variables */
 static struct termios orig_termios;
@@ -46,20 +48,33 @@ void enable_raw_mode(void) {
         die("tcsetattr");
 }
 
+void process_key(void) {
+    char c = read_key();
+
+    switch (c) {
+        case CTRL_KEY(KEY_QUIT):
+            exit(0);
+            break;
+    }
+}
+
+char read_key(void) {
+    int n_read;
+    char c;
+
+    while ((n_read = read(STDIN_FILENO, &c, 1)) != 1) {
+        if(n_read == -1 & errno != EAGAIN)
+            die("read");
+    }
+
+    return c;
+}
+
 int main(void) {
     enable_raw_mode();
 
     while (1) {
-        char c = '\0';
-        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN)
-            die("read");
-        if (iscntrl(c)) {
-            printf("%d\r\n", c);
-        } 
-        else {
-            printf("%d ('%c')\r\n", c, c);
-        }
-        if (c == CTRL_KEY(KEY_QUIT)) break;
+        process_key();
     }
 
     return 0;

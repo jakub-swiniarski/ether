@@ -1,1 +1,1 @@
-static char KEY_QUIT = 'q';
+#define KEY_QUIT 'q'
