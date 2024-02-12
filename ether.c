@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <termios.h>
@@ -10,8 +11,14 @@
 
 /* macros */
 #define CTRL_KEY(k) ((k) & 0x1f)
+#define ABUF_INIT {NULL, 0}
 
 /* structs */
+typedef struct {
+    char *b;
+    int len;
+} ABuf; /* append buffer */
+
 typedef struct {
     int screen_rows;
     int screen_cols;
@@ -19,6 +26,8 @@ typedef struct {
 } Config;
 
 /* function declarations */
+static void ab_append(ABuf *ab, const char *s, int len);
+static void ab_free(ABuf *ab);
 static void die(const char *s);
 static void disable_raw_mode(void);
 static void draw_rows(void);
@@ -34,6 +43,20 @@ static void refresh_screen(void);
 static Config config;
 
 /* function implementations  */
+void ab_append(ABuf *ab, const char *s, int len) {
+    char *new = realloc(ab->b, ab->len + len);
+
+    if (new == NULL)
+        return;
+    memcpy(&new[ab->len], s, len);
+    ab->b = new;
+    ab->len += len;
+}
+
+void ab_free(ABuf *ab) {
+    free(ab->b);
+}
+
 void die(const char *s) {
     write(STDOUT_FILENO, "\x1b[2J", 4);
     write(STDOUT_FILENO, "\x1b[H", 3);
