@@ -35,8 +35,8 @@ static Config config;
 
 /* function implementations  */
 void die(const char *s) {
-    write(STDOUT_FILENO, "\x1b[2J", 4); /* clear the screen */
-    write(STDOUT_FILENO, "\x1b[H", 3); /* move the cursor to the top-left corner */
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
 
     perror(s);
     exit(1);
@@ -118,8 +118,8 @@ void process_key(void) {
 
     switch (c) {
         case CTRL_KEY(KEY_QUIT):
-            write(STDOUT_FILENO, "\x1b[2J", 4); /* clear the screen */
-            write(STDOUT_FILENO, "\x1b[H", 3); /* move the cursor to the top-left corner */
+            write(STDOUT_FILENO, "\x1b[2J", 4);
+            write(STDOUT_FILENO, "\x1b[H", 3);
 
             exit(0);
             break;
@@ -139,8 +139,8 @@ char read_key(void) {
 }
 
 void refresh_screen(void) {
-    write(STDOUT_FILENO, "\x1b[2J", 4); /* clear the screen */
-    write(STDOUT_FILENO, "\x1b[H", 3); /* move the cursor to the top-left corner */
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
 
     draw_rows();
 
