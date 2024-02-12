@@ -20,6 +20,7 @@ typedef struct {
 } ABuf; /* append buffer */
 
 typedef struct {
+    int cur_x, cur_y;
     int screen_rows;
     int screen_cols;
     struct termios orig_termios;
@@ -137,6 +138,9 @@ int get_window_size(int *rows, int *cols) {
 }
 
 void init(void) {
+    config.cur_x=0;
+    config.cur_y=0;
+        
     if (get_window_size(&config.screen_rows, &config.screen_cols) == -1)
         die("get_window_size");
 }
@@ -174,7 +178,10 @@ void refresh_screen(void) {
 
     draw_rows(&ab);
 
-    ab_append(&ab, "\x1b[H", 3);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", config.cur_y + 1, config.cur_x + 1);
+    ab_append(&ab, buf, strlen(buf));
+
     ab_append(&ab, "\x1b[?25h", 6);
 
     write(STDOUT_FILENO, ab.b, ab.len);
