@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <termios.h>
 
@@ -20,6 +21,7 @@ static void die(const char *s);
 static void disable_raw_mode(void);
 static void draw_rows(void);
 static void enable_raw_mode(void);
+static int get_window_size(int *rows, int *cols);
 static void process_key(void);
 static char read_key(void);
 static void refresh_screen(void);
@@ -63,6 +65,17 @@ void enable_raw_mode(void) {
 
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
         die("tcsetattr");
+}
+
+int get_window_size(int *rows, int *cols) {
+    struct winsize ws;
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 1 || ws.ws_col == 0)
+        return -1;
+    else {
+        *cols = ws.ws_col;
+        *rows = ws.ws_row;
+        return 0;
+    }
 }
 
 void process_key(void) {
