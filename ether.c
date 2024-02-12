@@ -23,6 +23,9 @@ static struct termios orig_termios;
 
 /* function implementations  */
 void die(const char *s) {
+    write(STDOUT_FILENO, "\x1b[2J", 4); /* clear the screen */
+    write(STDOUT_FILENO, "\x1b[H", 3); /* move the cursor to the top-left corner */
+
     perror(s);
     exit(1);
 }
@@ -54,6 +57,9 @@ void process_key(void) {
 
     switch (c) {
         case CTRL_KEY(KEY_QUIT):
+            write(STDOUT_FILENO, "\x1b[2J", 4); /* clear the screen */
+            write(STDOUT_FILENO, "\x1b[H", 3); /* move the cursor to the top-left corner */
+
             exit(0);
             break;
     }
@@ -73,7 +79,7 @@ char read_key(void) {
 
 void refresh_screen(void) {
     write(STDOUT_FILENO, "\x1b[2J", 4); /* clear the screen */
-    write(STDOUT_FILENO, "\x1b[H", 3); /* move the cursor to top-left corner */
+    write(STDOUT_FILENO, "\x1b[H", 3); /* move the cursor to the top-left corner */
 }
 
 int main(void) {
