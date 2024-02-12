@@ -13,6 +13,7 @@
 /* function declarations */
 static void die(const char *s);
 static void disable_raw_mode(void);
+static void draw_rows(void);
 static void enable_raw_mode(void);
 static void process_key(void);
 static char read_key(void);
@@ -33,6 +34,13 @@ void die(const char *s) {
 void disable_raw_mode(void) {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
         die("tcsetattr");
+}
+
+void draw_rows(void) {
+    int y;
+    for (y=0; y<24; y++) {
+        write(STDOUT_FILENO, "~\r\n", 3);
+    }
 }
 
 void enable_raw_mode(void) {
@@ -80,6 +88,10 @@ char read_key(void) {
 void refresh_screen(void) {
     write(STDOUT_FILENO, "\x1b[2J", 4); /* clear the screen */
     write(STDOUT_FILENO, "\x1b[H", 3); /* move the cursor to the top-left corner */
+
+    draw_rows();
+
+    write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 int main(void) {
