@@ -10,6 +10,11 @@
 /* macros */
 #define CTRL_KEY(k) ((k) & 0x1f)
 
+/* structs */
+typedef struct {
+    struct termios orig_termios;
+} Config;
+
 /* function declarations */
 static void die(const char *s);
 static void disable_raw_mode(void);
@@ -20,7 +25,7 @@ static char read_key(void);
 static void refresh_screen(void);
 
 /* variables */
-static struct termios orig_termios;
+static Config config;
 
 /* function implementations  */
 void die(const char *s) {
@@ -32,7 +37,7 @@ void die(const char *s) {
 }
 
 void disable_raw_mode(void) {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &config.orig_termios) == -1)
         die("tcsetattr");
 }
 
@@ -44,11 +49,11 @@ void draw_rows(void) {
 }
 
 void enable_raw_mode(void) {
-    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1)
+    if (tcgetattr(STDIN_FILENO, &config.orig_termios) == -1)
         die("tcgetattr");
     atexit(disable_raw_mode);
 
-    struct termios raw = orig_termios;
+    struct termios raw = config.orig_termios;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     raw.c_oflag &= ~(OPOST);
     raw.c_cflag |= (CS8);
