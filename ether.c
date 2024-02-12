@@ -30,7 +30,7 @@ static void ab_append(ABuf *ab, const char *s, int len);
 static void ab_free(ABuf *ab);
 static void die(const char *s);
 static void disable_raw_mode(void);
-static void draw_rows(void);
+static void draw_rows(ABuf *ab);
 static void enable_raw_mode(void);
 static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
@@ -70,14 +70,14 @@ void disable_raw_mode(void) {
         die("tcsetattr");
 }
 
-void draw_rows(void) {
+void draw_rows(ABuf *ab) {
     int y;
 
     for (y = 0; y < config.screen_rows; y++) {
-        write(STDOUT_FILENO, "~", 1);
+        ab_append(ab, "~", 1);
 
         if (y < config.screen_rows - 1)
-            write(STDOUT_FILENO, "\r\n", 2);
+            ab_append(ab, "\r\n", 2);
     }
 }
 
@@ -166,12 +166,17 @@ char read_key(void) {
 }
 
 void refresh_screen(void) {
-    write(STDOUT_FILENO, "\x1b[2J", 4);
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    ABuf ab = ABUF_INIT;
 
-    draw_rows();
+    ab_append(&ab, "\x1b[2J", 4);
+    ab_append(&ab, "\x1b[H", 3);
 
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    draw_rows(&ab);
+
+    ab_append(&ab, "\x1b[H", 3);
+
+    write(STDOUT_FILENO, ab.b, ab.len);
+    ab_free(&ab);
 }
 
 int main(void) {
