@@ -16,6 +16,7 @@ static void disable_raw_mode(void);
 static void enable_raw_mode(void);
 static void process_key(void);
 static char read_key(void);
+static void refresh_screen(void);
 
 /* variables */
 static struct termios orig_termios;
@@ -70,10 +71,15 @@ char read_key(void) {
     return c;
 }
 
+void refresh_screen(void) {
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+}
+
 int main(void) {
     enable_raw_mode();
 
     while (1) {
+        refresh_screen();
         process_key();
     }
 
