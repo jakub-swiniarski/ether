@@ -27,6 +27,7 @@ typedef struct {
 
 typedef struct {
     int cur_x, cur_y;
+    int row_offset;
     int screen_rows;
     int screen_cols;
     int n_rows;
@@ -45,7 +46,7 @@ static void enable_raw_mode(void);
 static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
 static void init(void);
-static void open(char *filename);
+static void open(char *file_name);
 static void process_key(void);
 static char read_key(void);
 static void refresh_screen(void);
@@ -96,17 +97,18 @@ void draw_rows(ABuf *ab) {
     int y;
 
     for (y = 0; y < editor.screen_rows; y++) {
+        int file_row = y + editor.row_offset;
         ab_append(ab, "~", 1);
 
         ab_append(ab, "\x1b[K", 3);
         if (y < editor.screen_rows - 1)
             ab_append(ab, "\r\n", 2);
 
-        if (y < editor.n_rows) {
-            int len = editor.row[y].size;
+        if (file_row < editor.n_rows) {
+            int len = editor.row[file_row].size;
             if (len > editor.screen_cols)
                 len = editor.screen_cols;
-            ab_append(ab, editor.row[y].chars, len);
+            ab_append(ab, editor.row[file_row].chars, len);
         }
     }
 }
@@ -168,6 +170,7 @@ int get_window_size(int *rows, int *cols) {
 void init(void) {
     editor.cur_x = 0;
     editor.cur_y = 0;
+    editor.row_offset = 0;
     editor.n_rows = 0;
     editor.row = NULL;
         
@@ -175,8 +178,8 @@ void init(void) {
         die("get_window_size");
 }
 
-void open(char *filename) {
-    FILE *fp = fopen(filename, "r");
+void open(char *file_name) {
+    FILE *fp = fopen(file_name, "r");
     if (!fp)
         die("fopen");
 
