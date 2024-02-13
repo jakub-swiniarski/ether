@@ -20,9 +20,16 @@ typedef struct {
 } ABuf; /* append buffer */
 
 typedef struct {
+    int size;
+    char *chars;
+} Row; /* TODO: this is not in alphabetical order */
+
+typedef struct {
     int cur_x, cur_y;
     int screen_rows;
     int screen_cols;
+    int n_rows;
+    Row row;
     struct termios orig_termios;
 } Editor;
 
@@ -140,6 +147,7 @@ int get_window_size(int *rows, int *cols) {
 void init(void) {
     editor.cur_x=0;
     editor.cur_y=0;
+    editor.n_rows=0;
         
     if (get_window_size(&editor.screen_rows, &editor.screen_cols) == -1)
         die("get_window_size");
