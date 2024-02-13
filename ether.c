@@ -24,7 +24,7 @@ typedef struct {
     int screen_rows;
     int screen_cols;
     struct termios orig_termios;
-} Config;
+} Editor;
 
 /* function declarations */
 static void ab_append(ABuf *ab, const char *s, int len);
@@ -41,7 +41,7 @@ static char read_key(void);
 static void refresh_screen(void);
 
 /* variables */
-static Config config;
+static Editor editor;
 
 /* function implementations  */
 void ab_append(ABuf *ab, const char *s, int len) {
@@ -67,28 +67,28 @@ void die(const char *s) {
 }
 
 void disable_raw_mode(void) {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &config.orig_termios) == -1)
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &editor.orig_termios) == -1)
         die("tcsetattr");
 }
 
 void draw_rows(ABuf *ab) {
     int y;
 
-    for (y = 0; y < config.screen_rows; y++) {
+    for (y = 0; y < editor.screen_rows; y++) {
         ab_append(ab, "~", 1);
 
         ab_append(ab, "\x1b[K", 3);
-        if (y < config.screen_rows - 1)
+        if (y < editor.screen_rows - 1)
             ab_append(ab, "\r\n", 2);
     }
 }
 
 void enable_raw_mode(void) {
-    if (tcgetattr(STDIN_FILENO, &config.orig_termios) == -1)
+    if (tcgetattr(STDIN_FILENO, &editor.orig_termios) == -1)
         die("tcgetattr");
     atexit(disable_raw_mode);
 
-    struct termios raw = config.orig_termios;
+    struct termios raw = editor.orig_termios;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     raw.c_oflag &= ~(OPOST);
     raw.c_cflag |= (CS8);
@@ -138,10 +138,10 @@ int get_window_size(int *rows, int *cols) {
 }
 
 void init(void) {
-    config.cur_x=0;
-    config.cur_y=0;
+    editor.cur_x=0;
+    editor.cur_y=0;
         
-    if (get_window_size(&config.screen_rows, &config.screen_cols) == -1)
+    if (get_window_size(&editor.screen_rows, &editor.screen_cols) == -1)
         die("get_window_size");
 }
 
@@ -159,16 +159,16 @@ void process_key(void) {
 
         /* move the cursor */
         case KEY_LEFT:
-            config.cur_x--;
+            editor.cur_x--;
             break;
         case KEY_DOWN:
-            config.cur_y++;
+            editor.cur_y++;
             break;
         case KEY_UP:
-            config.cur_y--;
+            editor.cur_y--;
             break;
         case KEY_RIGHT:
-            config.cur_x++;
+            editor.cur_x++;
             break;
     }
 }
@@ -194,7 +194,7 @@ void refresh_screen(void) {
     draw_rows(&ab);
 
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", config.cur_y + 1, config.cur_x + 1);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cur_y + 1, editor.cur_x + 1);
     ab_append(&ab, buf, strlen(buf));
 
     ab_append(&ab, "\x1b[?25h", 6);
