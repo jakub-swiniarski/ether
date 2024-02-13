@@ -101,16 +101,16 @@ void draw_rows(ABuf *ab) {
         int file_row = y + editor.row_offset;
         ab_append(ab, "~", 1);
 
-        ab_append(ab, "\x1b[K", 3);
-        if (y < editor.screen_rows - 1)
-            ab_append(ab, "\r\n", 2);
-
         if (file_row < editor.n_rows) {
             int len = editor.row[file_row].size;
             if (len > editor.screen_cols)
                 len = editor.screen_cols;
             ab_append(ab, editor.row[file_row].chars, len);
         }
+
+        ab_append(ab, "\x1b[K", 3);
+        if (y < editor.screen_rows - 1)
+            ab_append(ab, "\r\n", 2);
     }
 }
 
