@@ -43,6 +43,7 @@ static void enable_raw_mode(void);
 static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
 static void init(void);
+static void open(void);
 static void process_key(void);
 static char read_key(void);
 static void refresh_screen(void);
@@ -87,6 +88,13 @@ void draw_rows(ABuf *ab) {
         ab_append(ab, "\x1b[K", 3);
         if (y < editor.screen_rows - 1)
             ab_append(ab, "\r\n", 2);
+
+        if (y < editor.n_rows) {
+            int len = editor.row.size;
+            if (len > editor.screen_cols)
+                len = editor.screen_cols;
+            ab_append(ab, editor.row.chars, len);
+        }
     }
 }
 
@@ -151,6 +159,17 @@ void init(void) {
         
     if (get_window_size(&editor.screen_rows, &editor.screen_cols) == -1)
         die("get_window_size");
+}
+
+void open(void) {
+    char *line = "HELLO WORLD!!!";
+    ssize_t line_len = 13;
+
+    editor.row.size = line_len;
+    editor.row.chars = malloc(line_len + 1);
+    memcpy(editor.row.chars, line, line_len);
+    editor.row.chars[line_len] = '\0';
+    editor.n_rows = 1;
 }
 
 void process_key(void) {
@@ -218,6 +237,7 @@ void refresh_screen(void) {
 int main(void) {
     enable_raw_mode();
     init();
+    open();
 
     while (1) {
         refresh_screen();
