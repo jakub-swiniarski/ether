@@ -50,6 +50,7 @@ static void open(char *file_name);
 static void process_key(void);
 static char read_key(void);
 static void refresh_screen(void);
+static void scroll(void);
 
 /* variables */
 static Editor editor;
@@ -215,7 +216,7 @@ void process_key(void) {
                 editor.cur_x--;
             break;
         case KEY_DOWN:
-            if (editor.cur_y != editor.screen_rows - 1)
+            if (editor.cur_y < editor.n_rows)
                 editor.cur_y++;
             break;
         case KEY_UP:
@@ -242,6 +243,8 @@ char read_key(void) {
 }
 
 void refresh_screen(void) {
+    scroll();
+
     ABuf ab = ABUF_INIT;
 
     ab_append(&ab, "\x1b[?25l", 6);
@@ -257,6 +260,13 @@ void refresh_screen(void) {
 
     write(STDOUT_FILENO, ab.b, ab.len);
     ab_free(&ab);
+}
+
+void scroll(void) {
+    if (editor.cur_y < editor.row_offset)
+        editor.row_offset = editor.cur_y;
+    if (editor.cur_y >= editor.row_offset + editor.screen_rows)
+        editor.row_offset = editor.cur_y - editor.screen_rows + 1;
 }
 
 int main(int argc, char *argv[]) {
