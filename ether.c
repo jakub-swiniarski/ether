@@ -159,16 +159,20 @@ void process_key(void) {
 
         /* move the cursor */
         case KEY_LEFT:
-            editor.cur_x--;
+            if (editor.cur_x != 0)
+                editor.cur_x--;
             break;
         case KEY_DOWN:
-            editor.cur_y++;
+            if (editor.cur_y != editor.screen_rows - 1)
+                editor.cur_y++;
             break;
         case KEY_UP:
-            editor.cur_y--;
+            if (editor.cur_y != 0)
+                editor.cur_y--;
             break;
         case KEY_RIGHT:
-            editor.cur_x++;
+            if (editor.cur_x != editor.screen_cols - 1)
+                editor.cur_x++;
             break;
     }
 }
