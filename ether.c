@@ -30,13 +30,14 @@ typedef struct {
     int screen_rows;
     int screen_cols;
     int n_rows;
-    Row row;
+    Row *row;
     struct termios orig_termios;
 } Editor;
 
 /* function declarations */
 static void ab_append(ABuf *ab, const char *s, int len);
 static void ab_free(ABuf *ab);
+static void append_row(char *s, size_t len);
 static void die(const char *s);
 static void disable_raw_mode(void);
 static void draw_rows(ABuf *ab);
@@ -67,6 +68,17 @@ void ab_free(ABuf *ab) {
     free(ab->b);
 }
 
+void append_row(char *s, size_t len) {
+    editor.row = realloc(editor.row, sizeof(Row) * (editor.n_rows + 1));
+
+    int at = editor.n_rows;
+    editor.row[at].size = len;
+    editor.row[at].chars = malloc(len + 1);
+    memcpy(editor.row[at].chars, s, len);
+    editor.row[at].chars[len] = '\0';
+    editor.n_rows++;
+}
+
 void die(const char *s) {
     write(STDOUT_FILENO, "\x1b[2J", 4);
     write(STDOUT_FILENO, "\x1b[H", 3);
@@ -91,10 +103,10 @@ void draw_rows(ABuf *ab) {
             ab_append(ab, "\r\n", 2);
 
         if (y < editor.n_rows) {
-            int len = editor.row.size;
+            int len = editor.row[y].size;
             if (len > editor.screen_cols)
                 len = editor.screen_cols;
-            ab_append(ab, editor.row.chars, len);
+            ab_append(ab, editor.row[y].chars, len);
         }
     }
 }
@@ -154,9 +166,10 @@ int get_window_size(int *rows, int *cols) {
 }
 
 void init(void) {
-    editor.cur_x=0;
-    editor.cur_y=0;
-    editor.n_rows=0;
+    editor.cur_x = 0;
+    editor.cur_y = 0;
+    editor.n_rows = 0;
+    editor.row = NULL;
         
     if (get_window_size(&editor.screen_rows, &editor.screen_cols) == -1)
         die("get_window_size");
@@ -171,15 +184,11 @@ void open(char *filename) {
     size_t line_cap = 0;
     ssize_t line_len;
     line_len = getline(&line, &line_cap, fp);
-    if (line_len != -1) {
+    while ((line_len = getline(&line, &line_cap, fp)) != -1) {
         while (line_len > 0 && (line[line_len - 1] == '\n' ||
                                line[line_len - 1] == '\r'))
             line_len--;
-        editor.row.size = line_len;
-        editor.row.chars = malloc(line_len + 1);
-        memcpy(editor.row.chars, line, line_len);
-        editor.row.chars[line_len] = '\0';
-        editor.n_rows = 1;
+        append_row(line, line_len);
     }
     free(line);
     fclose(fp);
