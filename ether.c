@@ -11,6 +11,7 @@
 #include "config.h"
 
 /* macros */
+#define VERSION "0.0.1"
 #define CTRL_KEY(k) ((k) & 0x1f)
 #define ABUF_INIT {NULL, 0}
 
@@ -99,9 +100,26 @@ void draw_rows(ABuf *ab) {
 
     for (y = 0; y < editor.screen_rows; y++) {
         int file_row = y + editor.row_offset;
-        ab_append(ab, "~", 1);
 
-        if (file_row < editor.n_rows) {
+        if (file_row >= editor.n_rows) {
+            if (editor.n_rows == 0 && y == editor.screen_rows / 3) {
+                char welcome[64];
+                int welcome_len = snprintf(welcome, sizeof(welcome), "Ether %s", VERSION);
+                if (welcome_len > editor.screen_cols)
+                    welcome_len = editor.screen_cols;
+                int padding = (editor.screen_cols - welcome_len) / 2;
+                if (padding) {
+                    ab_append(ab, "~", 1);
+                    padding--;
+                }
+                while (padding--)
+                    ab_append(ab, " ", 1);
+                ab_append(ab, welcome, welcome_len);
+            }
+            else
+                ab_append(ab, "~", 1);
+        }
+        else {
             int len = editor.row[file_row].size;
             if (len > editor.screen_cols)
                 len = editor.screen_cols;
