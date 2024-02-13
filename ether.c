@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -43,7 +44,7 @@ static void enable_raw_mode(void);
 static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
 static void init(void);
-static void open(void);
+static void open(char *filename);
 static void process_key(void);
 static char read_key(void);
 static void refresh_screen(void);
@@ -161,15 +162,27 @@ void init(void) {
         die("get_window_size");
 }
 
-void open(void) {
-    char *line = "HELLO WORLD!!!";
-    ssize_t line_len = 13;
+void open(char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp)
+        die("fopen");
 
-    editor.row.size = line_len;
-    editor.row.chars = malloc(line_len + 1);
-    memcpy(editor.row.chars, line, line_len);
-    editor.row.chars[line_len] = '\0';
-    editor.n_rows = 1;
+    char *line = NULL;
+    size_t line_cap = 0;
+    ssize_t line_len;
+    line_len = getline(&line, &line_cap, fp);
+    if (line_len != -1) {
+        while (line_len > 0 && (line[line_len - 1] == '\n' ||
+                               line[line_len - 1] == '\r'))
+            line_len--;
+        editor.row.size = line_len;
+        editor.row.chars = malloc(line_len + 1);
+        memcpy(editor.row.chars, line, line_len);
+        editor.row.chars[line_len] = '\0';
+        editor.n_rows = 1;
+    }
+    free(line);
+    fclose(fp);
 }
 
 void process_key(void) {
@@ -234,10 +247,11 @@ void refresh_screen(void) {
     ab_free(&ab);
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
     enable_raw_mode();
     init();
-    open();
+    if (argc >=2)
+        open(argv[1]);
 
     while (1) {
         refresh_screen();
