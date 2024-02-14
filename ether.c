@@ -186,7 +186,6 @@ void open(char *file_name) {
     char *line = NULL;
     size_t line_cap = 0;
     ssize_t line_len;
-    line_len = getline(&line, &line_cap, fp);
     while ((line_len = getline(&line, &line_cap, fp)) != -1) {
         while (line_len > 0 && (line[line_len - 1] == '\n' ||
                                line[line_len - 1] == '\r'))
