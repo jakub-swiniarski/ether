@@ -128,6 +128,8 @@ void draw_rows(ABuf *ab) {
 void draw_bar(ABuf *ab) {
     ab_append(ab, "\x1b[7m", 4);
 
+    /* TODO: if (command mode) display command stuff here */
+
     char status[64], r_status[64];
     int len = snprintf(status, sizeof(status), "%.20s - %d lines", editor.file_name ? editor.file_name : "[NO NAME]", editor.n_rows);
     int r_len = snprintf(r_status, sizeof(r_status), "%d/%d", editor.cur_y + 1, editor.n_rows);
