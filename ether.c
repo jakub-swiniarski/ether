@@ -28,6 +28,7 @@ typedef struct {
 typedef struct {
     int cur_x, cur_y;
     int row_offset;
+    int col_offset;
     int screen_rows;
     int screen_cols;
     int n_rows;
@@ -101,10 +102,12 @@ void draw_rows(ABuf *ab) {
         int file_row = y + editor.row_offset;
 
         if (file_row < editor.n_rows) {
-            int len = editor.row[file_row].size;
+            int len = editor.row[file_row].size - editor.col_offset;
+            if (len < 0)
+                len = 0;
             if (len > editor.screen_cols)
                 len = editor.screen_cols;
-            ab_append(ab, editor.row[file_row].chars, len);
+            ab_append(ab, &editor.row[file_row].chars[editor.col_offset], len);
         }
 
         ab_append(ab, "\x1b[K", 3);
@@ -171,6 +174,7 @@ void init(void) {
     editor.cur_x = 0;
     editor.cur_y = 0;
     editor.row_offset = 0;
+    editor.col_offset = 0;
     editor.n_rows = 0;
     editor.row = NULL;
         
@@ -222,8 +226,7 @@ void process_key(void) {
                 editor.cur_y--;
             break;
         case KEY_RIGHT:
-            if (editor.cur_x != editor.screen_cols - 1)
-                editor.cur_x++;
+            editor.cur_x++;
             break;
     }
 }
@@ -261,10 +264,17 @@ void refresh_screen(void) {
 }
 
 void scroll(void) {
+    /* vertical */
     if (editor.cur_y < editor.row_offset)
         editor.row_offset = editor.cur_y;
     if (editor.cur_y >= editor.row_offset + editor.screen_rows)
         editor.row_offset = editor.cur_y - editor.screen_rows + 1;
+
+    /* horizontal */
+    if (editor.cur_x < editor.col_offset)
+        editor.col_offset = editor.cur_x;
+    if (editor.cur_x >= editor.col_offset + editor.screen_cols)
+        editor.col_offset = editor.cur_x - editor.screen_cols + 1;
 }
 
 int main(int argc, char *argv[]) {
