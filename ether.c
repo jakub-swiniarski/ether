@@ -14,6 +14,10 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 #define ABUF_INIT {NULL, 0}
 
+/* enums */
+enum { ESCAPE = 1000 }; /* special keys */
+enum { NORMAL, COMMAND }; /*  */
+
 /* structs */
 typedef struct {
     char *b;
@@ -53,13 +57,14 @@ static int get_window_size(int *rows, int *cols);
 static void init(void);
 static void open(char *file_name);
 static void process_key(void);
-static char read_key(void);
+static int read_key(void);
 static void refresh_screen(void);
 static void scroll(void);
 static void update_row(Row *row);
 
 /* variables */
 static Editor editor;
+int mode;
 
 /* function implementations  */
 void ab_append(ABuf *ab, const char *s, int len) {
@@ -128,11 +133,9 @@ void draw_rows(ABuf *ab) {
 void draw_bar(ABuf *ab) {
     ab_append(ab, "\x1b[7m", 4);
 
-    /* TODO: if (command mode) display command stuff on the left (status char) */
-
     char status[64], r_status[64];
-    int len = snprintf(status, sizeof(status), "%.20s - %d lines", editor.file_name ? editor.file_name : "[NO NAME]", editor.n_rows);
-    int r_len = snprintf(r_status, sizeof(r_status), "%d/%d", editor.cur_y + 1, editor.n_rows);
+    int len = snprintf(status, sizeof(status), "%s", modes[mode]);
+    int r_len = snprintf(r_status, sizeof(r_status), "%.20s - %d/%d", editor.file_name ? editor.file_name : "[NO NAME]", editor.cur_y + 1, editor.n_rows);
     
     if (len > editor.screen_cols)
         len = editor.screen_cols;
@@ -215,6 +218,8 @@ void init(void) {
     editor.n_rows = 0;
     editor.row = NULL;
     editor.file_name = NULL;
+
+    mode = NORMAL;
         
     if (get_window_size(&editor.screen_rows, &editor.screen_cols) == -1)
         die("get_window_size");
@@ -243,7 +248,7 @@ void open(char *file_name) {
 }
 
 void process_key(void) {
-    char c = read_key();
+    int c = read_key();
     Row *row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
 
     switch (c) {
@@ -272,6 +277,14 @@ void process_key(void) {
             if (row && editor.cur_x < row->size)
                 editor.cur_x++;
             break;
+
+        /* modes */
+        case 'a':
+            mode = NORMAL;
+            break;
+        case KEY_COMMAND:
+            mode = COMMAND;
+            break;
     }
 
     row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
@@ -280,13 +293,23 @@ void process_key(void) {
         editor.cur_x = row_len;
 }
 
-char read_key(void) {
+int read_key(void) {
     int n_read;
     char c;
 
     while ((n_read = read(STDIN_FILENO, &c, 1)) != 1) {
         if (n_read == -1 && errno != EAGAIN)
             die("read");
+    }
+
+    if (c == '\x1b') {
+        char seq[3];
+
+        for (int i = 0; i<3; i++)
+            if (read(STDIN_FILENO, &seq[i], 1) != 1) return '\x1b';
+
+        if (seq[0] == '[' && seq[1] == '2' && seq[2] == '3')
+            return ESCAPE;
     }
 
     return c;
