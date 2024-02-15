@@ -128,8 +128,9 @@ void draw_rows(ABuf *ab) {
 void draw_bar(ABuf *ab) {
     ab_append(ab, "\x1b[7m", 4);
 
-    char status[64];
+    char status[64], r_status[64];
     int len = snprintf(status, sizeof(status), "%.20s - %d lines", editor.file_name ? editor.file_name : "[NO NAME]", editor.n_rows);
+    int r_len = snprintf(r_status, sizeof(r_status), "%d/%d", editor.cur_y + 1, editor.n_rows);
     
     if (len > editor.screen_cols)
         len = editor.screen_cols;
@@ -137,8 +138,14 @@ void draw_bar(ABuf *ab) {
     ab_append(ab, status, len);
     
     while (len < editor.screen_cols) {
-        ab_append(ab, " ", 1);
-        len++;
+        if (editor.screen_cols - len == r_len) {
+            ab_append(ab, r_status, r_len);
+            break;
+        }
+        else {
+            ab_append(ab, " ", 1);
+            len++;
+        }
     }
 
     ab_append(ab, "\x1b[m", 3);
