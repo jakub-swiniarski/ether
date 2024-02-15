@@ -254,7 +254,7 @@ void refresh_screen(void) {
     draw_rows(&ab);
 
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cur_y - editor.row_offset + 1, editor.cur_x + 1);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cur_y - editor.row_offset + 1, editor.cur_x - editor.col_offset + 1);
     ab_append(&ab, buf, strlen(buf));
 
     ab_append(&ab, "\x1b[?25h", 6);
