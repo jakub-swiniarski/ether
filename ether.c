@@ -202,6 +202,7 @@ void open(char *file_name) {
 
 void process_key(void) {
     char c = read_key();
+    Row *row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
 
     switch (c) {
         /* quit */
@@ -226,7 +227,8 @@ void process_key(void) {
                 editor.cur_y--;
             break;
         case KEY_RIGHT:
-            editor.cur_x++;
+            if (row && editor.cur_x < row->size)
+                editor.cur_x++;
             break;
     }
 }
