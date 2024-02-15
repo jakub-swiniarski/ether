@@ -45,6 +45,7 @@ static void append_row(char *s, size_t len);
 static void die(const char *s);
 static void disable_raw_mode(void);
 static void draw_rows(ABuf *ab);
+static void draw_status_bar(ABuf *ab);
 static void enable_raw_mode(void);
 static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
@@ -119,9 +120,21 @@ void draw_rows(ABuf *ab) {
         }
 
         ab_append(ab, "\x1b[K", 3);
-        if (y < editor.screen_rows - 1)
-            ab_append(ab, "\r\n", 2);
+        ab_append(ab, "\r\n", 2);
     }
+}
+
+void draw_status_bar(ABuf *ab) {
+    ab_append(ab, "\x1b[7m", 4);
+
+    int len = 0;
+    
+    while (len < editor.screen_cols) {
+        ab_append(ab, " ", 1);
+        len++;
+    }
+
+    ab_append(ab, "\x1b[m", 3);
 }
 
 void enable_raw_mode(void) {
@@ -188,6 +201,7 @@ void init(void) {
         
     if (get_window_size(&editor.screen_rows, &editor.screen_cols) == -1)
         die("get_window_size");
+    editor.screen_rows -= 1;
 }
 
 void open(char *file_name) {
@@ -267,6 +281,7 @@ void refresh_screen(void) {
     ab_append(&ab, "\x1b[H", 3);
 
     draw_rows(&ab);
+    draw_status_bar(&ab);
 
     char buf[32];
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cur_y - editor.row_offset + 1, editor.cur_x - editor.col_offset + 1);
