@@ -22,7 +22,7 @@ typedef struct {
 
 typedef struct {
     int size;
-    int r_size;
+    int render_size;
     char *chars;
     char *render;
 } Row; /* TODO: this is not in alphabetical order */
@@ -83,7 +83,7 @@ void append_row(char *s, size_t len) {
     memcpy(editor.row[at].chars, s, len);
     editor.row[at].chars[len] = '\0';
 
-    editor.row[at].r_size = 0;
+    editor.row[at].render_size = 0;
     editor.row[at].render = NULL;
     update_row(&editor.row[at]);
 
@@ -110,7 +110,7 @@ void draw_rows(ABuf *ab) {
         int file_row = y + editor.row_offset;
 
         if (file_row < editor.n_rows) {
-            int len = editor.row[file_row].r_size - editor.col_offset;
+            int len = editor.row[file_row].render_size - editor.col_offset;
             if (len < 0)
                 len = 0;
             if (len > editor.screen_cols)
@@ -315,7 +315,7 @@ void update_row(Row *row) {
     }
 
     row->render[idx] = '\0';
-    row->r_size = idx;
+    row->render_size = idx;
 }
 
 int main(int argc, char *argv[]) {
