@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <termios.h>
 
-#include "config.h"
+#include "config.h"             /* TODO: define commands like keybindings in dwm config.h, link functions to them  */
 
 /* macros */
 #define CTRL_KEY(k) ((k) & 0x1f)
