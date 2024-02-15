@@ -231,6 +231,11 @@ void process_key(void) {
                 editor.cur_x++;
             break;
     }
+
+    row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
+    int row_len = row ? row->size : 0;
+    if (editor.cur_x > row_len)
+        editor.cur_x = row_len;
 }
 
 char read_key(void) {
