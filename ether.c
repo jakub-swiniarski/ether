@@ -22,7 +22,9 @@ typedef struct {
 
 typedef struct {
     int size;
+    int r_size;
     char *chars;
+    char *render;
 } Row; /* TODO: this is not in alphabetical order */
 
 typedef struct {
@@ -52,6 +54,7 @@ static void process_key(void);
 static char read_key(void);
 static void refresh_screen(void);
 static void scroll(void);
+static void update_row(Row *row);
 
 /* variables */
 static Editor editor;
@@ -79,6 +82,11 @@ void append_row(char *s, size_t len) {
     editor.row[at].chars = malloc(len + 1);
     memcpy(editor.row[at].chars, s, len);
     editor.row[at].chars[len] = '\0';
+
+    editor.row[at].r_size = 0;
+    editor.row[at].render = NULL;
+    update_row(&editor.row[at]);
+
     editor.n_rows++;
 }
 
@@ -102,12 +110,12 @@ void draw_rows(ABuf *ab) {
         int file_row = y + editor.row_offset;
 
         if (file_row < editor.n_rows) {
-            int len = editor.row[file_row].size - editor.col_offset;
+            int len = editor.row[file_row].r_size - editor.col_offset;
             if (len < 0)
                 len = 0;
             if (len > editor.screen_cols)
                 len = editor.screen_cols;
-            ab_append(ab, &editor.row[file_row].chars[editor.col_offset], len);
+            ab_append(ab, &editor.row[file_row].render[editor.col_offset], len);
         }
 
         ab_append(ab, "\x1b[K", 3);
@@ -282,6 +290,32 @@ void scroll(void) {
         editor.col_offset = editor.cur_x;
     if (editor.cur_x >= editor.col_offset + editor.screen_cols)
         editor.col_offset = editor.cur_x - editor.screen_cols + 1;
+}
+
+void update_row(Row *row) {
+    int tabs = 0;
+    int j;
+
+    for (j = 0; j < row->size; j++)
+        if (row->chars[j] == '\t')
+            tabs++;
+
+    free(row->render);
+    row->render = malloc(row->size + tabs*(TAB_STOP - 1) + 1);
+
+    int idx = 0;
+    for (j = 0; j < row->size; j++) {
+        if(row->chars[j] == '\t') {
+            row->render[idx++] = ' ';
+            while (idx % TAB_STOP != 0)
+                row->render[idx++] = ' ';
+        }
+        else
+            row->render[idx++] = row->chars[j];
+    }
+
+    row->render[idx] = '\0';
+    row->r_size = idx;
 }
 
 int main(int argc, char *argv[]) {
