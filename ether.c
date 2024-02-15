@@ -15,8 +15,7 @@
 #define ABUF_INIT {NULL, 0}
 
 /* enums */
-enum { ESCAPE = 1000 }; /* special keys */
-enum { NORMAL, COMMAND }; /*  */
+enum { NORMAL, COMMAND }; /* modes */
 
 /* structs */
 typedef struct {
@@ -57,7 +56,7 @@ static int get_window_size(int *rows, int *cols);
 static void init(void);
 static void open(char *file_name);
 static void process_key(void);
-static int read_key(void);
+static char read_key(void);
 static void refresh_screen(void);
 static void scroll(void);
 static void update_row(Row *row);
@@ -248,7 +247,7 @@ void open(char *file_name) {
 }
 
 void process_key(void) {
-    int c = read_key();
+    char c = read_key();
     Row *row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
 
     switch (c) {
@@ -279,7 +278,7 @@ void process_key(void) {
             break;
 
         /* modes */
-        case 'a':
+        case 27: /* escape key */
             mode = NORMAL;
             break;
         case KEY_COMMAND:
@@ -293,23 +292,13 @@ void process_key(void) {
         editor.cur_x = row_len;
 }
 
-int read_key(void) {
+char read_key(void) {
     int n_read;
     char c;
 
     while ((n_read = read(STDIN_FILENO, &c, 1)) != 1) {
         if (n_read == -1 && errno != EAGAIN)
             die("read");
-    }
-
-    if (c == '\x1b') {
-        char seq[3];
-
-        for (int i = 0; i<3; i++)
-            if (read(STDIN_FILENO, &seq[i], 1) != 1) return '\x1b';
-
-        if (seq[0] == '[' && seq[1] == '2' && seq[2] == '3')
-            return ESCAPE;
     }
 
     return c;
