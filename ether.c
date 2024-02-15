@@ -35,6 +35,7 @@ typedef struct {
     int screen_cols;
     int n_rows;
     Row *row;
+    char *file_name;
     struct termios orig_termios;
 } Editor;
 
@@ -45,7 +46,7 @@ static void append_row(char *s, size_t len);
 static void die(const char *s);
 static void disable_raw_mode(void);
 static void draw_rows(ABuf *ab);
-static void draw_status_bar(ABuf *ab);
+static void draw_bar(ABuf *ab);
 static void enable_raw_mode(void);
 static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
@@ -124,10 +125,16 @@ void draw_rows(ABuf *ab) {
     }
 }
 
-void draw_status_bar(ABuf *ab) {
+void draw_bar(ABuf *ab) {
     ab_append(ab, "\x1b[7m", 4);
 
-    int len = 0;
+    char status[64];
+    int len = snprintf(status, sizeof(status), "%.20s - %d lines", editor.file_name ? editor.file_name : "[NO NAME]", editor.n_rows);
+    
+    if (len > editor.screen_cols)
+        len = editor.screen_cols;
+
+    ab_append(ab, status, len);
     
     while (len < editor.screen_cols) {
         ab_append(ab, " ", 1);
@@ -198,6 +205,7 @@ void init(void) {
     editor.col_offset = 0;
     editor.n_rows = 0;
     editor.row = NULL;
+    editor.file_name = NULL;
         
     if (get_window_size(&editor.screen_rows, &editor.screen_cols) == -1)
         die("get_window_size");
@@ -205,6 +213,9 @@ void init(void) {
 }
 
 void open(char *file_name) {
+    free(editor.file_name);
+    editor.file_name = strdup(file_name);
+
     FILE *fp = fopen(file_name, "r");
     if (!fp)
         die("fopen");
@@ -281,7 +292,7 @@ void refresh_screen(void) {
     ab_append(&ab, "\x1b[H", 3);
 
     draw_rows(&ab);
-    draw_status_bar(&ab);
+    draw_bar(&ab);
 
     char buf[32];
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cur_y - editor.row_offset + 1, editor.cur_x - editor.col_offset + 1);
