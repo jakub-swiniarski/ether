@@ -12,7 +12,7 @@
 
 /* macros */
 #define CTRL_KEY(k) ((k) & 0x1f)
-#define ABUF_INIT {NULL, 0}
+#define ABUF_INIT { NULL, 0 }
 
 /* enums */
 enum { NORMAL, COMMAND }; /* modes */
