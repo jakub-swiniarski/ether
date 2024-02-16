@@ -8,14 +8,14 @@
 #include <unistd.h>
 #include <termios.h>
 
-#include "config.h"             /* TODO: define commands like keybindings in dwm config.h, link functions to them  */
+#include "config.h" /* TODO: define commands like keybindings in dwm config.h, link functions to them  */
 
 /* macros */
 #define CTRL_KEY(k) ((k) & 0x1f)
 #define ABUF_INIT { NULL, 0 }
 
 /* enums */
-enum { NORMAL, COMMAND }; /* modes */
+enum { NORMAL, INSERT, COMMAND }; /* modes */
 
 /* structs */
 typedef struct {
@@ -54,10 +54,12 @@ static void enable_raw_mode(void);
 static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
 static void init(void);
+static void insert_char(char c);
 static void open(char *file_name);
 static void process_key(void);
 static char read_key(void);
 static void refresh_screen(void);
+static void row_insert_char(Row *row, int at, char c);
 static void scroll(void);
 static void update_row(Row *row);
 
@@ -225,6 +227,13 @@ void init(void) {
     editor.screen_rows -= 1;
 }
 
+void insert_char(char c) {
+    if (editor.cur_y == editor.n_rows)
+        append_row("", 0);
+    row_insert_char(&editor.row[editor.cur_y], editor.cur_x, c);
+    editor.cur_x++;
+}
+
 void open(char *file_name) {
     free(editor.file_name);
     editor.file_name = strdup(file_name);
@@ -250,41 +259,47 @@ void process_key(void) {
     char c = read_key();
     Row *row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
 
-    switch (c) {
-        /* quit */
-        case CTRL_KEY(KEY_QUIT):
-            write(STDOUT_FILENO, "\x1b[2J", 4);
-            write(STDOUT_FILENO, "\x1b[H", 3);
+    if (c == 27) /* escape key */
+        mode = NORMAL;
+    else if (mode == NORMAL) {
+        switch (c) {
+            /* quit */
+            case CTRL_KEY(KEY_QUIT):
+                write(STDOUT_FILENO, "\x1b[2J", 4);
+                write(STDOUT_FILENO, "\x1b[H", 3);
 
-            exit(0);
-            break;
+                exit(0);
+                break;
 
-        /* move the cursor */
-        case KEY_LEFT:
-            if (editor.cur_x != 0)
-                editor.cur_x--;
-            break;
-        case KEY_DOWN:
-            if (editor.cur_y < editor.n_rows)
-                editor.cur_y++;
-            break;
-        case KEY_UP:
-            if (editor.cur_y != 0)
-                editor.cur_y--;
-            break;
-        case KEY_RIGHT:
-            if (row && editor.cur_x < row->size)
-                editor.cur_x++;
-            break;
+            /* move the cursor */
+            case KEY_LEFT:
+                if (editor.cur_x != 0)
+                    editor.cur_x--;
+                break;
+            case KEY_DOWN:
+                if (editor.cur_y < editor.n_rows)
+                    editor.cur_y++;
+                break;
+            case KEY_UP:
+                if (editor.cur_y != 0)
+                    editor.cur_y--;
+                break;
+            case KEY_RIGHT:
+                if (row && editor.cur_x < row->size)
+                    editor.cur_x++;
+                break;
 
-        /* modes */
-        case 27: /* escape key */
-            mode = NORMAL;
-            break;
-        case KEY_COMMAND:
-            mode = COMMAND;
-            break;
+            /* modes */
+            case KEY_INSERT:
+                mode = INSERT;
+                break;
+            case KEY_COMMAND:
+                mode = COMMAND;
+                break;
+        }
     }
+    else if (mode == INSERT)
+        insert_char(c);
 
     row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
     int row_len = row ? row->size : 0;
@@ -323,6 +338,16 @@ void refresh_screen(void) {
 
     write(STDOUT_FILENO, ab.b, ab.len);
     ab_free(&ab);
+}
+
+void row_insert_char(Row *row, int at, char c) {
+    if (at < 0 || at > row->size)
+        at = row->size;
+    row->chars = realloc(row->chars, row->size + 2);
+    memmove(&row->chars[at + 1], &row->chars[at], row->size - at + 1);
+    row->size++;
+    row->chars[at] = c;
+    update_row(row);
 }
 
 void scroll(void) {
