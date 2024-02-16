@@ -7,7 +7,8 @@
 #define KEY_RIGHT 'l'
 
 /* modes */
-static const char *modes[] = { "NORMAL", "COMMAND" };
+static const char *modes[] = { "NORMAL", "INSERT", "COMMAND" }; /* display names */
+#define KEY_INSERT 'i'
 #define KEY_COMMAND ':'
 
 /* other */
