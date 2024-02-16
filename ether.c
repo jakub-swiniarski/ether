@@ -11,7 +11,6 @@
 #include "config.h" /* TODO: define commands like keybindings in dwm config.h, link functions to them  */
 
 /* macros */
-#define CTRL_KEY(k) ((k) & 0x1f)
 #define ABUF_INIT { NULL, 0 }
 
 /* enums */
