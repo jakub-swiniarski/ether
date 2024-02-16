@@ -57,6 +57,7 @@ static void init(void);
 static void insert_char(char c);
 static void open(char *file_name);
 static void process_key(void);
+static void quit(void);
 static char read_key(void);
 static void refresh_screen(void);
 static void row_insert_char(Row *row, int at, char c);
@@ -263,14 +264,6 @@ void process_key(void) {
         mode = NORMAL;
     else if (mode == NORMAL) {
         switch (c) {
-            /* quit */
-            case CTRL_KEY(KEY_QUIT):
-                write(STDOUT_FILENO, "\x1b[2J", 4);
-                write(STDOUT_FILENO, "\x1b[H", 3);
-
-                exit(0);
-                break;
-
             /* move the cursor */
             case KEY_LEFT:
                 if (editor.cur_x != 0)
@@ -300,11 +293,25 @@ void process_key(void) {
     }
     else if (mode == INSERT)
         insert_char(c);
+    else if (mode == COMMAND) {
+        switch (c) {
+            case KEY_QUIT:
+                quit();
+                break;
+        }
+    }
 
     row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
     int row_len = row ? row->size : 0;
     if (editor.cur_x > row_len)
         editor.cur_x = row_len;
+}
+
+void quit(void) {
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
+
+    exit(0);
 }
 
 char read_key(void) {
