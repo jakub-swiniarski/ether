@@ -42,10 +42,10 @@ typedef struct {
 } Editor;
 
 /* function declarations */
-static void ab_append(ABuf *ab, const char *s, int len);
+static void ab_append(ABuf *ab, const char *S, int len);
 static void ab_free(ABuf *ab);
 static void append_row(char *s, size_t len);
-static void die(const char *s);
+static void die(const char *S);
 static void disable_raw_mode(void);
 static void draw_rows(ABuf *ab);
 static void draw_bar(ABuf *ab);
@@ -68,12 +68,12 @@ static Editor editor;
 int mode;
 
 /* function implementations  */
-void ab_append(ABuf *ab, const char *s, int len) {
+void ab_append(ABuf *ab, const char *S, int len) {
     char *new = realloc(ab->b, ab->len + len);
 
     if (new == NULL)
         return;
-    memcpy(&new[ab->len], s, len);
+    memcpy(&new[ab->len], S, len);
     ab->b = new;
     ab->len += len;
 }
@@ -98,11 +98,11 @@ void append_row(char *s, size_t len) {
     editor.n_rows++;
 }
 
-void die(const char *s) {
+void die(const char *S) {
     write(STDOUT_FILENO, "\x1b[2J", 4);
     write(STDOUT_FILENO, "\x1b[H", 3);
 
-    perror(s);
+    perror(S);
     exit(1);
 }
 
