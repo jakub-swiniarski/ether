@@ -399,7 +399,7 @@ void update_row(Row *row) {
 int main(int argc, char *argv[]) {
     enable_raw_mode();
     init();
-    if (argc >=2)
+    if (argc >= 2)
         open(argv[1]);
 
     while (1) {
