@@ -147,8 +147,7 @@ void draw_bar(ABuf *ab) {
         if (editor.screen_cols - len == r_len) {
             ab_append(ab, r_status, r_len);
             break;
-        }
-        else {
+        } else {
             ab_append(ab, " ", 1);
             len++;
         }
@@ -203,8 +202,7 @@ int get_window_size(int *rows, int *cols) {
         if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12)
             return -1;
         return get_cursor_position(rows, cols);
-    }
-    else {
+    } else {
         *cols = ws.ws_col;
         *rows = ws.ws_row;
         return 0;
@@ -289,8 +287,7 @@ void process_key(void) {
                 mode = COMMAND;
                 break;
         }
-    }
-    else if (mode == INSERT)
+    } else if (mode == INSERT)
         insert_char(c);
     else if (mode == COMMAND) {
         switch (c) {
@@ -387,8 +384,7 @@ void update_row(Row *row) {
             row->render[idx++] = ' ';
             while (idx % TAB_STOP != 0)
                 row->render[idx++] = ' ';
-        }
-        else
+        } else
             row->render[idx++] = row->chars[j];
     }
 
