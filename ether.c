@@ -65,7 +65,7 @@ static void update_row(Row *row);
 
 /* variables */
 static Editor editor;
-int mode;
+static int mode;
 
 /* function implementations  */
 void ab_append(ABuf *ab, const char *S, int len) {
