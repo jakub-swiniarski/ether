@@ -1,23 +1,27 @@
-SOURCES=$(wildcard *.c)
-HEADERS=$(wildcard *.h)
-OBJECTS=$(SOURCES:.c=.o)
+SRC = $(wildcard *.c)
+HDR = $(wildcard *.h)
+OBJ = $(SRC:.c=.o)
 
-ether: $(OBJECTS)
-	gcc -o $@ $(OBJECTS)
+all: ether
 
-$(OBJECTS): $(SOURCES) $(HEADERS)
-	gcc -c $(SOURCES) -std=c99 -pedantic -Wall -Wextra -O2
+%.o: %.c
+	gcc -c -std=c99 -pedantic -Wall -Wextra -O2 $<
 
-.PHONY: clean run install uninstall
+$(OBJ): $(HDR)
 
-clean:
-	rm *.o ether
+ether: $(OBJ)
+	gcc -o $@ $(OBJ)
 
-run: ether
+run: all
 	./ether
 
-install: ether res
+clean:
+	rm -f *.o ether
+
+install: all
 	cp -f ether /usr/local/bin/
 
 uninstall:
 	rm -f /usr/local/bin/ether
+
+.PHONY: all run clean install uninstall
