@@ -21,21 +21,21 @@ make uninstall
 
 ## Default keybindings
 ### In normal mode
-Colon (:) - enter command mode
-I - enter insert mode
-H - move cursor to the left
-J - move cursor down
-K - move cursor up
-L - move cursor to the right
+Colon (:) - enter command mode <br/>
+I - enter insert mode <br/>
+H - move cursor to the left <br/>
+J - move cursor down <br/>
+K - move cursor up <br/>
+L - move cursor to the right <br/>
 
 ### In command mode
-Q - quit
-W - save changes
-X - delete character
-D - delete row
+Q - quit <br/>
+W - save changes <br/>
+X - delete character <br/>
+D - delete row <br/>
 
 ### In any mode
-Escape - enter normal mode
+Escape - enter normal mode <br/>
 
 ## Customization
 Edit config.h, recompile & reinstall the program.
