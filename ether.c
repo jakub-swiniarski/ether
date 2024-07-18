@@ -45,6 +45,7 @@ static void ab_append(ABuf *ab, const char *s, int len);
 static void ab_free(ABuf *ab);
 static void append_row(char *s, size_t len);
 static void die(const char *s);
+static void row_delete_char(Row *row, int at);
 static void disable_raw_mode(void);
 static void draw_rows(ABuf *ab);
 static void draw_bar(ABuf *ab);
@@ -104,6 +105,15 @@ void die(const char *s) {
     perror(s);
     exit(1);
 }
+
+void row_delete_char(Row *row, int at) {
+    if (row->size <= at)
+        return;
+    memmove(row->chars + at, row->chars + at + 1, row->size - at);
+    update_row(row);
+    row->size--;
+}
+
 
 void disable_raw_mode(void) {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &editor.orig_termios) == -1)
@@ -276,6 +286,9 @@ void process_key(void) {
             case KEY_RIGHT:
                 if (row && editor.cur_x < row->size)
                     editor.cur_x++;
+                break;
+            case KEY_DELETE:
+                row_delete_char(row, editor.cur_x);
                 break;
 
             /* modes */
