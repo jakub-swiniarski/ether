@@ -44,7 +44,6 @@ typedef struct {
 /* function declarations */
 static void ab_append(ABuf *ab, const char *s, int len);
 static void ab_free(ABuf *ab);
-static void append_row(char *s, size_t len);
 static void delete_row(int at);
 static void die(const char *s);
 static void disable_raw_mode(void);
@@ -58,6 +57,8 @@ static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
 static void init(void);
 static void insert_char(char c);
+static void insert_new_line(void);
+static void insert_row(int at, char *s, size_t len);
 static void process_key(void);
 static void quit(void);
 static char read_key(void);
@@ -85,22 +86,6 @@ void ab_append(ABuf *ab, const char *s, int len) {
 
 void ab_free(ABuf *ab) {
     free(ab->b);
-}
-
-void append_row(char *s, size_t len) {
-    editor.row = realloc(editor.row, sizeof(Row) * (editor.n_rows + 1));
-
-    int at = editor.n_rows;
-    editor.row[at].size = len;
-    editor.row[at].chars = malloc(len + 1);
-    memcpy(editor.row[at].chars, s, len);
-    editor.row[at].chars[len] = '\0';
-
-    editor.row[at].render_size = 0;
-    editor.row[at].render = NULL;
-    update_row(&editor.row[at]);
-
-    editor.n_rows++;
 }
 
 static void delete_row(int at) {
@@ -205,7 +190,7 @@ void file_open(char *filename) {
         && (line[line_len - 1] == '\n'
         || line[line_len - 1] == '\r'))
             line_len--;
-        append_row(line, line_len);
+        insert_row(editor.n_rows, line, line_len);
     }
     free(line);
     fclose(fp);
@@ -281,9 +266,59 @@ void init(void) {
 
 void insert_char(char c) {
     if (editor.cur_y == editor.n_rows)
-        append_row("", 0);
+        insert_row(editor.n_rows, "", 0);
     row_insert_char(&editor.row[editor.cur_y], editor.cur_x, c);
     editor.cur_x++;
+}
+
+void insert_new_line(void) {
+    int filerow = editor.row_offset + editor.cur_y;
+    int filecol = editor.col_offset + editor.cur_x;
+    Row *row = (filerow >= editor.n_rows) ? NULL : &editor.row[filerow];
+
+    if (!row) {
+        if (filerow == editor.n_rows) {
+            insert_row(filerow, "", 0);
+            goto fixcursor;
+        }
+        return;
+    }
+    /* If the cursor is over the current line size, we want to conceptually
+     * think it's just over the last character. */
+    if (filecol >= row->size) filecol = row->size;
+    if (filecol == 0) {
+        insert_row(filerow, "", 0);
+    } else {
+        /* We are in the middle of a line. Split it between two rows. */
+        insert_row(filerow + 1, row->chars + filecol, row->size - filecol);
+        row = &editor.row[filerow];
+        row->chars[filecol] = '\0';
+        row->size = filecol;
+        update_row(row);
+    }
+
+fixcursor:
+    if (editor.cur_y == editor.screen_rows - 1)
+        editor.row_offset++;
+    else
+        editor.cur_y++;
+    editor.cur_x = 0;
+    editor.col_offset = 0;
+}
+
+void insert_row(int at, char *s, size_t len) {
+    if (at > editor.n_rows)
+        return;
+    editor.row = realloc(editor.row, sizeof(Row) * (editor.n_rows + 1));
+    if (at != editor.n_rows)
+        memmove(editor.row + at + 1, editor.row + at, sizeof(editor.row[0]) * (editor.n_rows - at));
+    editor.row[at].size = len;
+    editor.row[at].chars = malloc(len + 1);
+    memcpy(editor.row[at].chars, s, len + 1);
+    editor.row[at].render = NULL;
+    editor.row[at].render_size = 0;
+    update_row(editor.row + at);
+    editor.n_rows++;
 }
 
 void process_key(void) {
@@ -328,9 +363,12 @@ void process_key(void) {
                 mode = mode_command;
                 break;
         }
-    } else if (mode == mode_insert)
-        insert_char(c);
-    else if (mode == mode_command) {
+    } else if (mode == mode_insert) {
+        if (c == 13) /* enter key */
+            insert_new_line();
+        else
+            insert_char(c);  
+    } else if (mode == mode_command) {
         switch (c) {
             case KEY_QUIT:
                 quit();
