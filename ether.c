@@ -64,7 +64,7 @@ static char read_key(void);
 static void refresh_screen(void);
 static void row_delete_char(Row *row, int at);
 static void row_insert_char(Row *row, int at, char c);
-static char *rows_to_str(int buflen);
+static char *rows_to_str();
 static void scroll(void);
 static void update_row(Row *row);
 
@@ -212,8 +212,7 @@ void file_open(char *filename) {
 }
 
 void file_save(void) {
-    int len;
-    char *buf = rows_to_str(len);
+    char *buf = rows_to_str();
     FILE *file = fopen(editor.filename, "w");
     if (file == NULL)
         goto writeerr;
@@ -413,14 +412,13 @@ void row_insert_char(Row *row, int at, char c) {
     update_row(row);
 }
 
-char *rows_to_str(int buflen) {
+char *rows_to_str() {
     char *buf = NULL, *p;
     int totlen = 0;
     int i;
 
     for (i = 0; i < editor.n_rows; i++)
         totlen += editor.row[i].size + 1; /* +1 is for "\n" at end of every row */
-    buflen = totlen;
     totlen++; /* also make space for nulterm */
 
     p = buf = malloc(totlen);
