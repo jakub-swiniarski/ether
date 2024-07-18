@@ -44,12 +44,13 @@ typedef struct {
 static void ab_append(ABuf *ab, const char *s, int len);
 static void ab_free(ABuf *ab);
 static void append_row(char *s, size_t len);
+static void delete_row(int at);
 static void die(const char *s);
-static void row_delete_char(Row *row, int at);
 static void disable_raw_mode(void);
 static void draw_rows(ABuf *ab);
 static void draw_bar(ABuf *ab);
 static void enable_raw_mode(void);
+static void free_row(Row *row);
 static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
 static void init(void);
@@ -59,6 +60,7 @@ static void process_key(void);
 static void quit(void);
 static char read_key(void);
 static void refresh_screen(void);
+static void row_delete_char(Row *row, int at);
 static void row_insert_char(Row *row, int at, char c);
 static void scroll(void);
 static void update_row(Row *row);
@@ -98,6 +100,17 @@ void append_row(char *s, size_t len) {
     editor.n_rows++;
 }
 
+static void delete_row(int at) {
+    Row *row;
+
+    if (at >= editor.n_rows)
+        return;
+    row = editor.row + at;
+    free_row(row);
+    memmove(editor.row + at, editor.row + at + 1, sizeof(editor.row[0]) * (editor.n_rows - at - 1));
+    editor.n_rows--;
+}
+
 void die(const char *s) {
     write(STDOUT_FILENO, "\x1b[2J", 4);
     write(STDOUT_FILENO, "\x1b[H", 3);
@@ -105,15 +118,6 @@ void die(const char *s) {
     perror(s);
     exit(1);
 }
-
-void row_delete_char(Row *row, int at) {
-    if (row->size <= at)
-        return;
-    memmove(row->chars + at, row->chars + at + 1, row->size - at);
-    update_row(row);
-    row->size--;
-}
-
 
 void disable_raw_mode(void) {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &editor.orig_termios) == -1)
@@ -180,6 +184,11 @@ void enable_raw_mode(void) {
 
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
         die("tcsetattr");
+}
+
+void free_row(Row *row) {
+    free(row->render);
+    free(row->chars);
 }
 
 int get_cursor_position(int *rows, int *cols) {
@@ -288,9 +297,12 @@ void process_key(void) {
                     editor.cur_x++;
                 break;
 
-            /* deleting chars */
-            case KEY_DELETE:
+            /* deleting */
+            case KEY_DELETE_CHAR:
                 row_delete_char(row, editor.cur_x);
+                break;
+            case KEY_DELETE_ROW:
+                delete_row(editor.cur_y);
                 break;
 
             /* modes */
@@ -356,6 +368,15 @@ void refresh_screen(void) {
     write(STDOUT_FILENO, ab.b, ab.len);
     ab_free(&ab);
 }
+
+void row_delete_char(Row *row, int at) {
+    if (row->size <= at)
+        return;
+    memmove(row->chars + at, row->chars + at + 1, row->size - at);
+    update_row(row);
+    row->size--;
+}
+
 
 void row_insert_char(Row *row, int at, char c) {
     if (at < 0 || at > row->size)

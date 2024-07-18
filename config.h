@@ -1,6 +1,7 @@
 /* keys */
 #define KEY_QUIT 'q'
-#define KEY_DELETE 'x'
+#define KEY_DELETE_CHAR 'x'
+#define KEY_DELETE_ROW 'd' 
 
 #define KEY_LEFT 'h'
 #define KEY_DOWN 'j'
