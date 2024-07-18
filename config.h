@@ -1,3 +1,6 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
 /* keys */
 #define KEY_QUIT 'q'
 #define KEY_SAVE 'w'
@@ -17,3 +20,5 @@ static const char *modes[] = { "NORMAL", "INSERT", "COMMAND" }; /* display names
 
 /* other */
 #define TAB_STOP 4
+
+#endif /* CONFIG_H */
