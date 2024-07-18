@@ -3,7 +3,7 @@ An overly minimal Vim-like editor <br/>
 Ether uses parts of code from [Kilo](https://github.com/antirez/kilo). Kilo's license is included in this repository.
 
 ## How to install?
-Run this as root:
+Run this with root privileges:
 ```shell
 make install
 ```
@@ -14,7 +14,7 @@ ether file
 ```
 
 ## How to uninstall?
-Run this as root:
+Run this with root privileges:
 ```shell
 make uninstall
 ```
