@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +37,7 @@ typedef struct {
     int screen_cols;
     int n_rows;
     Row *row;
-    char *file_name;
+    char *filename;
     struct termios orig_termios;
 } Editor;
 
@@ -50,18 +51,20 @@ static void disable_raw_mode(void);
 static void draw_rows(ABuf *ab);
 static void draw_bar(ABuf *ab);
 static void enable_raw_mode(void);
+static void file_open(char *filename);
+static void file_save(void);
 static void free_row(Row *row);
 static int get_cursor_position(int *rows, int *cols);
 static int get_window_size(int *rows, int *cols);
 static void init(void);
 static void insert_char(char c);
-static void open(char *file_name);
 static void process_key(void);
 static void quit(void);
 static char read_key(void);
 static void refresh_screen(void);
 static void row_delete_char(Row *row, int at);
 static void row_insert_char(Row *row, int at, char c);
+static char *rows_to_str(int buflen);
 static void scroll(void);
 static void update_row(Row *row);
 
@@ -149,7 +152,7 @@ void draw_bar(ABuf *ab) {
 
     char status[64], r_status[64];
     int len = snprintf(status, sizeof(status), "%s", modes[mode]);
-    int r_len = snprintf(r_status, sizeof(r_status), "%.20s - %d/%d", editor.file_name ? editor.file_name : "[NO NAME]", editor.cur_y + 1, editor.n_rows);
+    int r_len = snprintf(r_status, sizeof(r_status), "%.20s - %d/%d", editor.filename ? editor.filename : "[NO NAME]", editor.cur_y + 1, editor.n_rows);
     
     if (len > editor.screen_cols)
         len = editor.screen_cols;
@@ -184,6 +187,44 @@ void enable_raw_mode(void) {
 
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
         die("tcsetattr");
+}
+
+void file_open(char *filename) {
+    free(editor.filename);
+    editor.filename = strdup(filename);
+
+    FILE *fp = fopen(filename, "r");
+    if (!fp)
+        die("fopen");
+
+    char *line = NULL;
+    size_t line_cap = 0;
+    ssize_t line_len;
+    while ((line_len = getline(&line, &line_cap, fp)) != -1) {
+        while (line_len > 0 
+        && (line[line_len - 1] == '\n'
+        || line[line_len - 1] == '\r'))
+            line_len--;
+        append_row(line, line_len);
+    }
+    free(line);
+    fclose(fp);
+}
+
+void file_save(void) {
+    int len;
+    char *buf = rows_to_str(len);
+    FILE *file = fopen(editor.filename, "w");
+    if (file == NULL)
+        goto writeerr;
+    fputs(buf, file);
+    fclose(file);
+    free(buf);
+    return;
+
+writeerr:
+    free(buf);
+    return;
 }
 
 void free_row(Row *row) {
@@ -234,7 +275,7 @@ void init(void) {
     editor.col_offset = 0;
     editor.n_rows = 0;
     editor.row = NULL;
-    editor.file_name = NULL;
+    editor.filename = NULL;
 
     mode = mode_normal;
         
@@ -248,27 +289,6 @@ void insert_char(char c) {
         append_row("", 0);
     row_insert_char(&editor.row[editor.cur_y], editor.cur_x, c);
     editor.cur_x++;
-}
-
-void open(char *file_name) {
-    free(editor.file_name);
-    editor.file_name = strdup(file_name);
-
-    FILE *fp = fopen(file_name, "r");
-    if (!fp)
-        die("fopen");
-
-    char *line = NULL;
-    size_t line_cap = 0;
-    ssize_t line_len;
-    while ((line_len = getline(&line, &line_cap, fp)) != -1) {
-        while (line_len > 0 && (line[line_len - 1] == '\n' ||
-                               line[line_len - 1] == '\r'))
-            line_len--;
-        append_row(line, line_len);
-    }
-    free(line);
-    fclose(fp);
 }
 
 void process_key(void) {
@@ -319,6 +339,11 @@ void process_key(void) {
         switch (c) {
             case KEY_QUIT:
                 quit();
+                break;
+            /* saving */
+            case KEY_SAVE:
+                file_save();
+                mode = mode_normal;
                 break;
         }
     }
@@ -388,6 +413,27 @@ void row_insert_char(Row *row, int at, char c) {
     update_row(row);
 }
 
+char *rows_to_str(int buflen) {
+    char *buf = NULL, *p;
+    int totlen = 0;
+    int i;
+
+    for (i = 0; i < editor.n_rows; i++)
+        totlen += editor.row[i].size + 1; /* +1 is for "\n" at end of every row */
+    buflen = totlen;
+    totlen++; /* also make space for nulterm */
+
+    p = buf = malloc(totlen);
+    for (i = 0; i < editor.n_rows; i++) {
+        memcpy(p, editor.row[i].chars, editor.row[i].size);
+        p += editor.row[i].size;
+        *p = '\n';
+        p++;
+    }
+    *p = '\0';
+    return buf;
+}
+
 void scroll(void) {
     /* vertical */
     if (editor.cur_y < editor.row_offset)
@@ -431,7 +477,7 @@ int main(int argc, char *argv[]) {
     enable_raw_mode();
     init();
     if (argc >= 2)
-        open(argv[1]);
+        file_open(argv[1]);
 
     while (1) {
         refresh_screen();
