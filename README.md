@@ -16,5 +16,26 @@ ether file
 ## How to uninstall?
 Run this as root:
 ```shell
-sudo make uninstall
+make uninstall
 ```
+
+## Default keybindings
+### In normal mode
+Colon (:) - enter command mode
+I - enter insert mode
+H - move cursor to the left
+J - move cursor down
+K - move cursor up
+L - move cursor to the right
+
+### In command mode
+Q - quit
+W - save changes
+X - delete character
+D - delete row
+
+### In any mode
+Escape - enter normal mode
+
+## Customization
+Edit config.h, recompile & reinstall the program.
