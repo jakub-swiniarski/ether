@@ -15,6 +15,10 @@
 
 /* enums */
 enum { mode_normal, mode_insert, mode_command };
+enum {
+    key_esc = 27,
+    key_enter = 13
+};
 
 /* structs */
 typedef struct {
@@ -325,7 +329,7 @@ void process_key(void) {
     char c = read_key();
     Row *row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
 
-    if (c == 27) /* escape key */
+    if (c == key_esc)
         mode = mode_normal;
     else if (mode == mode_normal) {
         switch (c) {
@@ -364,7 +368,7 @@ void process_key(void) {
                 break;
         }
     } else if (mode == mode_insert) {
-        if (c == 13) /* enter key */
+        if (c == key_enter)
             insert_new_line();
         else
             insert_char(c);  
