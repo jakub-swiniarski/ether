@@ -214,14 +214,10 @@ void file_open(char *filename) {
 void file_save(void) {
     char *buf = rows_to_str();
     FILE *file = fopen(editor.filename, "w");
-    if (file == NULL)
-        goto writeerr;
-    fputs(buf, file);
-    fclose(file);
-    free(buf);
-    return;
-
-writeerr:
+    if (file != NULL) {
+        fputs(buf, file);
+        fclose(file);
+    }
     free(buf);
     return;
 }
