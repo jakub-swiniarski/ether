@@ -287,6 +287,8 @@ void process_key(void) {
                 if (row && editor.cur_x < row->size)
                     editor.cur_x++;
                 break;
+
+            /* deleting chars */
             case KEY_DELETE:
                 row_delete_char(row, editor.cur_x);
                 break;
