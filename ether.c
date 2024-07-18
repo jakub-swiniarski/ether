@@ -1,5 +1,4 @@
 #define _POSIX_C_SOURCE 200809L
-#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,13 +7,13 @@
 #include <unistd.h>
 #include <termios.h>
 
-#include "config.h" /* TODO: define commands like keybindings in dwm config.h, link functions to them  */
+#include "config.h"
 
 /* macros */
 #define ABUF_INIT { NULL, 0 }
 
 /* enums */
-enum { NORMAL, INSERT, COMMAND }; /* modes */
+enum { mode_normal, mode_insert, mode_command };
 
 /* structs */
 typedef struct {
@@ -27,7 +26,7 @@ typedef struct {
     int render_size;
     char *chars;
     char *render;
-} Row; /* TODO: this is not in alphabetical order */
+} Row;
 
 typedef struct {
     int cur_x, cur_y;
@@ -218,7 +217,7 @@ void init(void) {
     editor.row = NULL;
     editor.file_name = NULL;
 
-    mode = NORMAL;
+    mode = mode_normal;
         
     if (get_window_size(&editor.screen_rows, &editor.screen_cols) == -1)
         die("get_window_size");
@@ -258,8 +257,8 @@ void process_key(void) {
     Row *row = (editor.cur_y >= editor.n_rows) ? NULL : &editor.row[editor.cur_y];
 
     if (c == 27) /* escape key */
-        mode = NORMAL;
-    else if (mode == NORMAL) {
+        mode = mode_normal;
+    else if (mode == mode_normal) {
         switch (c) {
             /* move the cursor */
             case KEY_LEFT:
@@ -281,15 +280,15 @@ void process_key(void) {
 
             /* modes */
             case KEY_INSERT:
-                mode = INSERT;
+                mode = mode_insert;
                 break;
             case KEY_COMMAND:
-                mode = COMMAND;
+                mode = mode_command;
                 break;
         }
-    } else if (mode == INSERT)
+    } else if (mode == mode_insert)
         insert_char(c);
-    else if (mode == COMMAND) {
+    else if (mode == mode_command) {
         switch (c) {
             case KEY_QUIT:
                 quit();
